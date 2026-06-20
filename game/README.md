@@ -16,5 +16,5 @@ and environment progression.
 Run them from the repository root:
 
 ```bash
-python3 -B -m unittest discover -s tests
+python3 -B -m unittest discover -s game/tests
 ```
