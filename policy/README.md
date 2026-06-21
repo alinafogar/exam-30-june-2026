@@ -24,13 +24,15 @@ All policies implement the minimal `Policy` protocol:
 - `AdvancedHeuristicPolicy`: explicit rule-based heuristic for richer team-aware
   play. It separates cases by current winner, player position in the trick, and
   trick value.
+- `LinearSoftmaxPolicy`: learnable policy with linear action preferences and a
+  stable softmax over legal cards. It supports stochastic sampling and greedy
+  argmax selection.
 
 ## Features
 
 - `BriscolaFeatureExtractor`: builds numeric features from a legal
-  `Osservazione` and a legal candidate card. It is intended for learnable
-  policies such as a future linear softmax policy, and does not use hidden game
-  state.
+  `Osservazione` and a legal candidate card for learnable policies, without
+  using hidden game state.
 
 ## Tests
 
