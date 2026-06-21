@@ -5,6 +5,7 @@ from .base import Policy
 from .features import BriscolaFeatureExtractor
 from .greedy_policy import GreedyPolicy
 from .heuristic_policy import HeuristicPolicy
+from .linear_softmax_policy import LinearSoftmaxPolicy
 from .random_policy import RandomPolicy
 
 __all__ = [
@@ -12,6 +13,7 @@ __all__ = [
     "BriscolaFeatureExtractor",
     "GreedyPolicy",
     "HeuristicPolicy",
+    "LinearSoftmaxPolicy",
     "Policy",
     "RandomPolicy",
 ]
