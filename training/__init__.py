@@ -7,6 +7,12 @@ from .episode import (
     TrajectoryStep,
     collect_episode,
 )
+from .reinforce import (
+    BASELINE_MODES,
+    ReinforceConfig,
+    TrainStats,
+    reinforce_update,
+)
 from .rewards import (
     PUNTI_TOTALI_PARTITA,
     REWARD_MODES,
@@ -22,14 +28,18 @@ __all__ = [
     "MOSSE_PER_GIOCATORE",
     "MOSSE_TOTALI_PARTITA",
     "PUNTI_TOTALI_PARTITA",
+    "BASELINE_MODES",
     "REWARD_MODES",
     "EpisodeResult",
+    "ReinforceConfig",
     "RewardConfig",
     "TrajectoryStep",
+    "TrainStats",
     "calcola_margine",
     "calcola_segno",
     "collect_episode",
     "normalizza_margine",
+    "reinforce_update",
     "reward_finale",
     "reward_presa",
 ]
