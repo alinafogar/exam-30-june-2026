@@ -1,0 +1,140 @@
+from __future__ import annotations
+
+import random
+import unittest
+from dataclasses import dataclass, field
+
+from game.cards import Carta
+from game.observation import Osservazione
+from game.rules import SQUADRA_DISPARI, SQUADRA_PARI
+from policy import RandomPolicy
+from evaluation.match import play_match
+
+
+@dataclass
+class TrackingPolicy:
+    name: str
+    seen_players: list[int] = field(default_factory=list)
+    greedy_values: list[bool] = field(default_factory=list)
+    selected_cards: list[Carta] = field(default_factory=list)
+
+    def action_probabilities(self, osservazione: Osservazione) -> dict[Carta, float]:
+        probability = 1.0 / len(osservazione.azioni_legali)
+        return {carta: probability for carta in osservazione.azioni_legali}
+
+    def select_action(
+        self,
+        osservazione: Osservazione,
+        rng: random.Random,
+        greedy: bool = False,
+    ) -> Carta:
+        self.seen_players.append(osservazione.giocatore_id)
+        self.greedy_values.append(greedy)
+        carta = osservazione.azioni_legali[0]
+        self.selected_cards.append(carta)
+        return carta
+
+
+def random_policies() -> dict[int, RandomPolicy]:
+    return {giocatore_id: RandomPolicy() for giocatore_id in range(4)}
+
+
+class TestPlayMatch(unittest.TestCase):
+    def test_play_match_produce_risultato_completo(self):
+        # Una evaluation match deve chiudere una partita integra senza training.
+        result = play_match(
+            policies_by_player=random_policies(),
+            seed_ambiente=10,
+            seed_policy=20,
+            primo_giocatore_id=0,
+        )
+
+        self.assertEqual(sum(result.punteggi_finali.values()), 120)
+        self.assertEqual(
+            result.margine_squadra_pari,
+            result.punteggi_finali[SQUADRA_PARI]
+            - result.punteggi_finali[SQUADRA_DISPARI],
+        )
+        if result.margine_squadra_pari > 0:
+            self.assertEqual(result.squadra_vincitrice, SQUADRA_PARI)
+        elif result.margine_squadra_pari < 0:
+            self.assertEqual(result.squadra_vincitrice, SQUADRA_DISPARI)
+        else:
+            self.assertIsNone(result.squadra_vincitrice)
+        self.assertEqual(result.seed_ambiente, 10)
+        self.assertEqual(result.seed_policy, 20)
+        self.assertEqual(result.primo_giocatore_id, 0)
+
+    def test_stessi_seed_producono_stesso_risultato(self):
+        # Ambiente e tie-break delle policy sono riproducibili se i seed coincidono.
+        first = play_match(
+            policies_by_player=random_policies(),
+            seed_ambiente=11,
+            seed_policy=21,
+            primo_giocatore_id=1,
+        )
+        second = play_match(
+            policies_by_player=random_policies(),
+            seed_ambiente=11,
+            seed_policy=21,
+            primo_giocatore_id=1,
+        )
+
+        self.assertEqual(first, second)
+
+    def test_policy_per_giocatore_e_greedy_forzato(self):
+        # Ogni policy vede solo il proprio giocatore e riceve greedy=True.
+        policies = {
+            giocatore_id: TrackingPolicy(name=f"policy_{giocatore_id}")
+            for giocatore_id in range(4)
+        }
+
+        play_match(
+            policies_by_player=policies,
+            seed_ambiente=12,
+            seed_policy=22,
+            primo_giocatore_id=2,
+        )
+
+        for giocatore_id, policy in policies.items():
+            self.assertEqual(set(policy.seen_players), {giocatore_id})
+            self.assertEqual(len(policy.selected_cards), 10)
+            self.assertEqual(set(policy.greedy_values), {True})
+
+    def test_policies_by_player_deve_contenere_quattro_giocatori(self):
+        # La sandbox non deduce posti mancanti o extra.
+        with self.assertRaises(ValueError):
+            play_match(
+                policies_by_player={0: RandomPolicy(), 1: RandomPolicy()},
+                seed_ambiente=13,
+                seed_policy=23,
+                primo_giocatore_id=0,
+            )
+
+        with self.assertRaises(ValueError):
+            play_match(
+                policies_by_player={
+                    0: RandomPolicy(),
+                    1: RandomPolicy(),
+                    2: RandomPolicy(),
+                    3: RandomPolicy(),
+                    4: RandomPolicy(),
+                },
+                seed_ambiente=13,
+                seed_policy=23,
+                primo_giocatore_id=0,
+            )
+
+    def test_primo_giocatore_non_valido_solleva_value_error(self):
+        # La rotazione deve restare esplicita e valida.
+        with self.assertRaises(ValueError):
+            play_match(
+                policies_by_player=random_policies(),
+                seed_ambiente=14,
+                seed_policy=24,
+                primo_giocatore_id=4,
+            )
+
+
+if __name__ == "__main__":
+    unittest.main()
