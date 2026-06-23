@@ -39,3 +39,6 @@ A scenario specifies:
 - partner policy;
 - next opponent policy;
 - previous opponent policy.
+
+The default suite includes fixed scenarios against random, greedy, heuristic,
+advanced heuristic, and perfect heuristic opponents.
